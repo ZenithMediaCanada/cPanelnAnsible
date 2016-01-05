@@ -3,7 +3,9 @@
 - hosts: dns
   vars:
   - COMMON_ROOT_PASSWORD: 'XXXXXX'
+##### Run the following command to generate an encrypted password and replace XXXXXX with it.
 ##### echo 'import crypt,getpass; print crypt.crypt(getpass.getpass(), "$6$AC3bdCF7!")' | python -
+#### When you access cPanel you can enter the unencrypted password to enter your system
   become: yes
   tasks:
   - name: Create var/cpanel/ recrusively
