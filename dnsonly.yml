@@ -1,0 +1,36 @@
+# Another check could be /root/installer.lock for a running cpanel installer
+---
+- hosts: dns
+  vars:
+  - COMMON_ROOT_PASSWORD: 'XXXXXX'
+##### echo 'import crypt,getpass; print crypt.crypt(getpass.getpass(), "$6$AC3bdCF7!")' | python -
+  become: yes
+  tasks:
+  - name: Create var/cpanel/ recrusively
+    file: path=/var/cpanel state=directory owner=root group=root mode=0755 recurse=yes
+  - name: Template - cPanel Base
+    template: src=~/ansible/roles/dnsonly/templates/cpanel/wwwacct.conf.j2 dest=/etc/wwwacct.conf owner=root group=root mode=0644
+  - name: Template - cPanel Tweak Settings
+    template: src=~/ansible/roles/dnsonly/templates/cpanel/cpanel.config.j2 dest=/var/cpanel/cpanel.config owner=root group=root mode=0644
+  - name: Template - cPanel Update
+    template: src=~/ansible/roles/dnsonly/templates/cpanel/cpupdate.conf.j2 dest=/etc/cpupdate.conf owner=root group=root mode=0644
+  - name: Fetch - cPanel DNSOnly
+    get_url: url=https://securedownloads.cpanel.net/latest-dnsonly dest=/home/latest-dnsonly mode=0755 force=yes validate_certs=False
+  - name: Install - Prerequisits - wget
+    yum: pkg=wget state=present
+  - name: Install - Prerequisits - rdate
+    yum: pkg=rdate state=present
+  - name: Install - cPanel DNSOnly
+    shell: sh latest-dnsonly chdir=/home/ creates=/var/log/cpanel-install.log executable=/bin/bash
+  - name: Template - ZoneTemplates - Simple
+    template: src=~/ansible/roles/cpanel/templates/cpanel/zonetemplates/root_simple.j2 dest=/var/cpanel/zonetemplates/root_simple owner=root group=root mode=0644
+  - name: Template - ZoneTemplates - Standard
+    template: src=~/ansible/roles/cpanel/templates/cpanel/zonetemplates/root_simple.j2 dest=/var/cpanel/zonetemplates/root_standard owner=root group=root mode=0644
+  - name: Template - ZoneTemplates - VirtualFTP
+    template: src=~/ansible/roles/cpanel/templates/cpanel/zonetemplates/root_simple.j2 dest=/var/cpanel/zonetemplates/root_standardvirtualftp owner=root group=root mode=0644
+  - name: Template - chkservd.conf
+    template: src=~/ansible/roles/dnsonly/templates/cpanel/chkservd.conf.j2 dest=/etc/chkserv.d/chkservd.conf owner=root group=root mode=0644
+  - name: Setup - Default cPanel Password
+    user: name=root password="{{ COMMON_ROOT_PASSWORD }}" update_password=always shell=/bin/bash
+  - name: Create File - .whostmgrft (SKIP WIZARD)
+    file: path=/etc/.whostmgrft state=touch owner=root group=root mode=0555
