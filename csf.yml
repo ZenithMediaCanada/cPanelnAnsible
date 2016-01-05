@@ -1,0 +1,25 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+  - name: Get Cluster IP
+    command: echo getclusterip
+- hosts: dns
+  become: yes
+  tasks:
+  - name: Fetch - csf
+    get_url: url=https://download.configserver.com/csf.tgz dest=/tmp/csf.tgz mode=0755 force=yes validate_certs=False
+  - name: Unpack - csf
+    unarchive: src=/tmp/csf.tgz dest=/tmp copy=no
+  - name: Install - csf
+    shell: sh install.sh chdir=/tmp/csf creates=/etc/csf/csf.conf excutable=/bin/bash
+  #- name: Template - Local Deny
+  #  template: src=~/ansible/roles/cpanel/templates/csf/csf.deny dest=/etc/csf/csf.deny owner=root group=root mode=0600
+  #- name: Templates - Local Ignore
+  #  template: src=~/ansible/roles/cpanel/templates/csf/csf.ignore dest=/etc/csf/csf.ignore owner=root group=root mode=0600
+  - name: Template - Pignore
+    template: src=~/ansible/roles/cpanel/templates/csf/csf.pignore dest=/etc/csf/csf.pignore owner=root group=root mode=0600
+  - name: Template - Custom Regex
+    template: src=~/ansible/roles/cpanel/templates/csf/regex.custom.pm dest=/etc/csf/regex.custom.pm owner=root group=root mode=0777
+  - name: Templates - Master Config
+    template: src=~/ansible/roles/dnsonly/templates/csf/csf.conf dest=/etc/csf/csf.conf owner=root group=root mode=0600
