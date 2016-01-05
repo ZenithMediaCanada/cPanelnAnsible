@@ -1,0 +1,10 @@
+---
+- hosts: dns
+  become: yes
+  tasks:
+   - name: Reboot
+     raw: /sbin/shutdown -r 1
+     changed_when: True
+   - name: Wait for system to complete reboot (5 min max / 90 sec delay)
+     wait_for: host={{ ansible_default_ipv4.address }} port=22 timeout={{ 5 * 60 }} delay=90 state=started
+     delegate_to: 127.0.0.1
